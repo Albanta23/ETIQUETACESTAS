@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etiquetador - Embutidos Ballesteros SL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -75,38 +77,7 @@
             font-size: 1.2em;
         }
 
-        /* En la vista de pantalla, mostrar solo la primera etiqueta para validación */
-        .etiqueta:not(:first-child) {
-            display: none;
-        }
-
-        @media print {
-            body, html {
-                margin: 0;
-                padding: 0;
-            }
-            .controls {
-                display: none;
-            }
-            #printBtn {
-                display: none;
-            }
-            #print-area {
-                margin: 0;
-            }
-            .etiqueta {
-                border: none;
-                width: 70mm;
-                height: 90mm;
-                page-break-after: always;
-                margin: 0;
-            }
-
-            /* Al imprimir, asegurarse de que todas las etiquetas sean visibles */
-            .etiqueta:not(:first-child) {
-                display: flex;
-            }
-        }
+        /* Las reglas de impresión y de ocultar etiquetas ya no son necesarias */
     </style>
 </head>
 <body>
@@ -122,37 +93,46 @@
         <label for="logo-input">Logo (opcional):</label>
         <input type="file" id="logo-input" name="logo-input" accept="image/*">
 
-        <button id="generarBtn">Generar Etiquetas</button>
-        <button id="printBtn">Imprimir Etiquetas</button>
+        <button id="generarBtn">Generar PDF</button>
+        <div id="status" style="display: none; margin-top: 10px; color: #333;">Generando PDF... por favor, espere.</div>
     </div>
 
     <div id="print-area">
-        <!-- Las etiquetas generadas aparecerán aquí -->
+        <!-- Las etiquetas generadas aparecerán aquí temporalmente -->
     </div>
 
     <script>
         document.getElementById('generarBtn').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
             const cantidad = document.getElementById('cantidad').value;
             const tipoCesta = document.getElementById('cesta').value;
             const printArea = document.getElementById('print-area');
             const logoInput = document.getElementById('logo-input');
+            const statusDiv = document.getElementById('status');
+            const generarBtn = document.getElementById('generarBtn');
             const logoFile = logoInput.files[0];
 
-            // Validar que el tipo de cesta no esté vacío
             if (!tipoCesta.trim()) {
                 alert('Por favor, introduce el tipo de cesta.');
                 return;
             }
 
-            // Limpiar etiquetas anteriores
+            // Mostrar estado y deshabilitar botón
+            statusDiv.style.display = 'block';
+            generarBtn.disabled = true;
             printArea.innerHTML = '';
 
-            const generateLabels = (logoSrc) => {
+            const processPdf = async (logoSrc) => {
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: [70, 90]
+                });
+
                 for (let i = 0; i < cantidad; i++) {
                     const etiqueta = document.createElement('div');
                     etiqueta.className = 'etiqueta';
 
-                    // Generar el HTML del logo solo si se proporciona una imagen
                     const logoHtml = logoSrc
                         ? `<div class="logo"><img src="${logoSrc}" alt="Logo" width="150"></div>`
                         : '';
@@ -163,24 +143,38 @@
                             <h2>${tipoCesta}</h2>
                         </div>
                     `;
-
                     printArea.appendChild(etiqueta);
+
+                    const canvas = await html2canvas(etiqueta, {
+                        scale: 3, // Aumenta la resolución para mejor calidad
+                        useCORS: true
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+
+                    if (i > 0) {
+                        doc.addPage();
+                    }
+                    doc.addImage(imgData, 'PNG', 0, 0, 70, 90);
+
+                    printArea.removeChild(etiqueta); // Limpiar la etiqueta después de procesarla
                 }
-                
-                // Mostrar el botón de imprimir después de generar las etiquetas
-                document.getElementById('printBtn').classList.add('visible');
+
+                doc.save('etiquetas.pdf');
+
+                // Ocultar estado y habilitar botón
+                statusDiv.style.display = 'none';
+                generarBtn.disabled = false;
             };
 
             if (logoFile) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const logoDataUrl = e.target.result;
-                    generateLabels(logoDataUrl);
+                    processPdf(e.target.result);
                 };
                 reader.readAsDataURL(logoFile);
             } else {
-                // Generar etiquetas sin logo si no se selecciona ningún archivo
-                generateLabels(null);
+                processPdf(null);
             }
         });
 
