@@ -30,6 +30,18 @@
             cursor: pointer;
         }
 
+        #printBtn {
+            display: none;
+            margin-left: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        #printBtn.visible {
+            display: inline-block;
+        }
+
         #print-area {
             margin-top: 20px;
         }
@@ -76,6 +88,9 @@
             .controls {
                 display: none;
             }
+            #printBtn {
+                display: none;
+            }
             #print-area {
                 margin: 0;
             }
@@ -108,6 +123,7 @@
         <input type="file" id="logo-input" name="logo-input" accept="image/*">
 
         <button id="generarBtn">Generar Etiquetas</button>
+        <button id="printBtn">Imprimir Etiquetas</button>
     </div>
 
     <div id="print-area">
@@ -150,6 +166,9 @@
 
                     printArea.appendChild(etiqueta);
                 }
+                
+                // Mostrar el botón de imprimir después de generar las etiquetas
+                document.getElementById('printBtn').classList.add('visible');
             };
 
             if (logoFile) {
@@ -163,6 +182,11 @@
                 // Generar etiquetas sin logo si no se selecciona ningún archivo
                 generateLabels(null);
             }
+        });
+
+        // Agregar funcionalidad al botón de imprimir
+        document.getElementById('printBtn').addEventListener('click', function() {
+            window.print();
         });
     </script>
 
