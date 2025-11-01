@@ -32,6 +32,18 @@
             cursor: pointer;
         }
 
+        #printBtn {
+            display: none;
+            margin-left: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        #printBtn.visible {
+            display: inline-block;
+        }
+
         #print-area {
             margin-top: 20px;
         }
@@ -164,6 +176,11 @@
             } else {
                 processPdf(null);
             }
+        });
+
+        // Agregar funcionalidad al botón de imprimir
+        document.getElementById('printBtn').addEventListener('click', function() {
+            window.print();
         });
     </script>
 
