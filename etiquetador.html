@@ -63,6 +63,11 @@
             font-size: 1.2em;
         }
 
+        /* En la vista de pantalla, mostrar solo la primera etiqueta para validación */
+        .etiqueta:not(:first-child) {
+            display: none;
+        }
+
         @media print {
             body, html {
                 margin: 0;
@@ -81,6 +86,11 @@
                 page-break-after: always;
                 margin: 0;
             }
+
+            /* Al imprimir, asegurarse de que todas las etiquetas sean visibles */
+            .etiqueta:not(:first-child) {
+                display: flex;
+            }
         }
     </style>
 </head>
@@ -94,6 +104,9 @@
         <label for="cesta">Tipo de cesta:</label>
         <input type="text" id="cesta" name="cesta" placeholder="Ej: Cesta Navideña Premium">
 
+        <label for="logo-input">Logo (opcional):</label>
+        <input type="file" id="logo-input" name="logo-input" accept="image/*">
+
         <button id="generarBtn">Generar Etiquetas</button>
     </div>
 
@@ -106,6 +119,8 @@
             const cantidad = document.getElementById('cantidad').value;
             const tipoCesta = document.getElementById('cesta').value;
             const printArea = document.getElementById('print-area');
+            const logoInput = document.getElementById('logo-input');
+            const logoFile = logoInput.files[0];
 
             // Validar que el tipo de cesta no esté vacío
             if (!tipoCesta.trim()) {
@@ -116,21 +131,37 @@
             // Limpiar etiquetas anteriores
             printArea.innerHTML = '';
 
-            // Generar las nuevas etiquetas
-            for (let i = 0; i < cantidad; i++) {
-                const etiqueta = document.createElement('div');
-                etiqueta.className = 'etiqueta';
+            const generateLabels = (logoSrc) => {
+                for (let i = 0; i < cantidad; i++) {
+                    const etiqueta = document.createElement('div');
+                    etiqueta.className = 'etiqueta';
 
-                etiqueta.innerHTML = `
-                    <div class="logo">
-                        <img src="placeholder.png" alt="Logo de Embutidos Ballesteros SL" width="150">
-                    </div>
-                    <div class="cesta-info">
-                        <h2>${tipoCesta}</h2>
-                    </div>
-                `;
+                    // Generar el HTML del logo solo si se proporciona una imagen
+                    const logoHtml = logoSrc
+                        ? `<div class="logo"><img src="${logoSrc}" alt="Logo" width="150"></div>`
+                        : '';
 
-                printArea.appendChild(etiqueta);
+                    etiqueta.innerHTML = `
+                        ${logoHtml}
+                        <div class="cesta-info">
+                            <h2>${tipoCesta}</h2>
+                        </div>
+                    `;
+
+                    printArea.appendChild(etiqueta);
+                }
+            };
+
+            if (logoFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const logoDataUrl = e.target.result;
+                    generateLabels(logoDataUrl);
+                };
+                reader.readAsDataURL(logoFile);
+            } else {
+                // Generar etiquetas sin logo si no se selecciona ningún archivo
+                generateLabels(null);
             }
         });
     </script>
